@@ -1,0 +1,94 @@
+version: '3.7'
+
+services:
+  postgres:
+    image: postgres:15.3
+    container_name: postgres
+    env_file: ./.env 
+    ports:
+      - "5432:5432"
+    networks:
+      - yanto-net
+  
+  rest:
+    image: apache/iceberg-rest-fixture
+    container_name: iceberg-rest
+    ports:
+      - 8181:8181
+    env_file: ./.env
+    networks:
+      - yanto-net
+
+  spark-master:
+    image: spark:2.5.2
+    build: .
+    container_name: spark-master
+    hostname: master
+    env_file: ./.env
+    networks:
+      - yanto-net
+    ports:
+      - 7077:7077
+      - 8089:8080
+      - 4040:4040
+
+  spark-worker1:
+    image: spark:3.5.2
+    build: .
+    container_name: spark-worker1
+    env_file: ./.env
+    environment:
+      - MODE=worker
+    networks:
+      - yanto-net
+    ports:
+      - 8081:8081
+    depends_on:
+      - master
+
+  spark-worker2:
+    image: spark:3.5.2
+    build: .
+    container_name: spark-worker2
+    environment:
+      - MODE=worker
+    env_file: ./.env
+    networks:
+      - yanto-net
+    ports:
+      - 8082:8081
+    depends_on:
+      - master
+
+  spark-notebook:
+    image: spark:3.5.2
+    build: .
+    container_name: spark-notebook
+    environment:
+      - MODE=notebook
+    env_file: ./.env
+    ports:
+      - 8989:8989
+    networks:
+      - yanto-net
+    depends_on:
+      - master
+  # rest:
+  #   image: tabulario/iceberg-rest
+  #   container_name: iceberg-rest
+  #   networks:
+  #     - yanto-net
+  #   ports:
+  #     - 8181:8181
+  #   environment:
+  #     - AWS_ACCESS_KEY_ID=minioadmin
+  #     - AWS_SECRET_ACCESS_KEY=minioadmin
+  #     - AWS_REGION=us-east-1
+  #     - CATALOG_WAREHOUSE=s3://warehouse
+  #     - CATALOG_IO__IMPL=org.apache.iceberg.aws.s3.S3FileIO
+  #     - CATALOG_S3_ENDPOINT=http://minio:9000
+
+networks:
+  yanto-net:
+    driver: bridge
+    external: true
