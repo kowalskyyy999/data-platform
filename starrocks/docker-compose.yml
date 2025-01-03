@@ -1,0 +1,36 @@
+version: '3'
+
+
+networks:
+  yanto-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.20.0.0/24
+
+
+services:
+  starrocks-fe:
+    build:
+      context: .
+      args:
+        - STARROCKS_VERSION=3.3.7
+        - PRIORITY_NETWORKS=192.20.0.0/24
+    container_name: starrocks-fe
+    ports:
+      - 9030:9030
+      - 8030:8030
+    environment:
+      - ROOT_STARROCKS_PASSWORD=${ROOT_STARROCKS_PASSWORD}
+      - STARROCKS_USERNAME=${STARROCKS_USERNAME}
+      - STARROCKS_PASSWORD=${STARROCKS_PASSWORD}
+      - STARROCKS_DATABASE=${STARROCKS_DATABASE}
+    networks:
+      yanto-net:
+        ipv4_address: 192.20.0.121
+
+  # starrocks-be:
+  #   pass
+  #
+  # starrocks-cn:
+  #   pass
