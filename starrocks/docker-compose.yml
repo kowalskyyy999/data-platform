@@ -1,22 +1,14 @@
 version: '3'
 
-
-networks:
-  yanto-net:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 192.20.0.0/24
-
-
 services:
   starrocks-fe:
+    image: starrocks:3.3.7
     build:
       context: .
       args:
-        - STARROCKS_VERSION=3.3.7
-        - PRIORITY_NETWORKS=192.20.0.0/24
+        - PRIORITY_NETWORKS=192.168.12.0/24
     container_name: starrocks-fe
+    command: ["/bin/sh", "-c", "/opt/starrocks/fe_server.sh"]
     ports:
       - 9030:9030
       - 8030:8030
@@ -25,12 +17,57 @@ services:
       - STARROCKS_USERNAME=${STARROCKS_USERNAME}
       - STARROCKS_PASSWORD=${STARROCKS_PASSWORD}
       - STARROCKS_DATABASE=${STARROCKS_DATABASE}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - starrocks-fe:/opt/starrocks/fe
     networks:
       yanto-net:
-        ipv4_address: 192.20.0.121
+        ipv4_address: 192.168.12.13
+    depends_on:
+      - starrocks-be
+      - starrocks-cn
 
-  # starrocks-be:
-  #   pass
-  #
-  # starrocks-cn:
-  #   pass
+  starrocks-be:
+    image: starrocks:3.3.7
+    container_name: starrocks-be
+    build:
+      context: .
+      args:
+        - PRIORITY_NETWORKS=192.168.12.0/24
+    command: ["/bin/sh", "-c", "/opt/starrocks/be_server.sh"]
+    volumes:
+      - starrocks-be:/opt/starrocks/be
+    ports:
+      - 8040:8040
+    networks:
+      yanto-net:
+        ipv4_address: 192.168.12.14
+      
+  starrocks-cn:
+    image: starrocks:3.3.7
+    container_name: starrocks-cn
+    build:
+      context: .
+      args:
+        - PRIORITY_NETWORKS=192.168.12.0/24
+    command: ["/bin/sh", "-c", "/opt/starrocks/cn_server.sh"]
+    networks:
+      yanto-net:
+        ipv4_address: 192.168.12.15
+
+networks:
+  yanto-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.12.0/24
+          gateway: 192.168.12.1
+    external: true
+
+volumes:
+  starrocks-fe:
+    external: true
+  starrocks-be:
+    external: true

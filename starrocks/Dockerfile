@@ -6,32 +6,40 @@ ARG USER=starrocks
 ARG USER_UID=1000
 ARG USER_GID=${USER_UID}
 
-ARG STARROCKS_VERSION
+# ARG STARROCKS_VERSION
 ARG PRIORITY_NETWORKS
 
 RUN apt-get clean
 
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y curl wget software-properties-common openjdk-11-jdk-headless ca-certificates mysql-client
+    apt-get install -y curl wget software-properties-common openjdk-11-jdk-headless ca-certificates mysql-server mysql-client && \
+    apt-get update
 
 ENV JAVA_HOME="/usr/lib/jvm/java-1.11.0-openjdk-amd64"
 ENV STARROCKS_HOME="/opt/starrocks"
 
+ENV CATALOG_NAME="iceberg_catalog"
+ENV CATALOG_REST_URI="http://rest:8181"
+ENV CATALOG_WAREHOUSE="s3://warehouse"
+ENV S3_ENDPOINT="http://minio:9000"
+ENV AWS_ACCESS_KEY_ID="root"
+ENV AWS_SECRET_ACCESS_KEY="root"
+
 WORKDIR /opt
 
-# RUN wget https://releases.starrocks.io/starrocks/StarRocks-3.3.7-ubuntu-amd64.tar.gz
+RUN wget https://releases.starrocks.io/starrocks/StarRocks-3.3.7-ubuntu-amd64.tar.gz
 
 RUN groupadd --gid ${USER_UID} ${USER} && \
     useradd --uid ${USER_UID} --gid $USER_GID -M --shell /usr/sbin/nologin ${USER} && \
     usermod -aG root ${USER}
 
-COPY StarRocks-${STARROCKS_VERSION}-ubuntu-amd64.tar.gz .
+# COPY StarRocks-${STARROCKS_VERSION}-ubuntu-amd64.tar.gz .
 COPY setup_db.py .
 
-RUN tar -zxvf StarRocks-${STARROCKS_VERSION}-ubuntu-amd64.tar.gz && \
-  mv StarRocks-${STARROCKS_VERSION}-ubuntu-amd64 starrocks && \
-  rm StarRocks-${STARROCKS_VERSION}-ubuntu-amd64.tar.gz
+RUN tar -zxvf StarRocks-3.3.7-ubuntu-amd64.tar.gz && \
+  mv StarRocks-3.3.7-ubuntu-amd64 starrocks && \
+  rm StarRocks-3.3.7-ubuntu-amd64.tar.gz
 
 RUN echo priority_networks = $PRIORITY_NETWORKS >> "/opt/starrocks/fe/conf/fe.conf" && \
   echo priority_networks = $PRIORITY_NETWORKS >> "/opt/starrocks/be/conf/be.conf" && \
@@ -46,8 +54,10 @@ RUN apt-get install ca-certificates -y && \
 
 WORKDIR /opt/starrocks 
 
+RUN service mysql start
+
 RUN echo python3 /opt/setup_db.py >> "setup_db.sh" && \ 
-  echo "mysql -h fe-server -P 9030 -u root < sql_script.sql" >> "setup_db.sh" && \
+  echo "mysql -h starrocks-fe -P 9030 -uroot < sql_script.sql" >> "setup_db.sh" && \
   echo rm sql_script.sql >> "setup_db.sh"
 
 RUN mkdir be/storage && \
@@ -66,7 +76,8 @@ RUN echo bash /opt/starrocks/be/bin/stop_cn.sh --daemon > "cn_server.sh" && \
 RUN mkdir fe/meta  &&\
     echo bash /opt/starrocks/fe/bin/stop_fe.sh --daemon > "fe_server.sh" && \
     echo bash /opt/starrocks/fe/bin/start_fe.sh --daemon >> "fe_server.sh" && \
-    echo sleep 5 >> "fe_server.sh" && \ 
+    echo service mysql start >> "fe_server.sh" && \
+    echo sleep 25 >> "fe_server.sh" && \ 
     echo bash /opt/starrocks/setup_db.sh >> "fe_server.sh" && \
     echo sleep 10 >> "fe_server.sh" && \
     echo tail -f /opt/starrocks/fe/log/fe.log >> "fe_server.sh" && \
