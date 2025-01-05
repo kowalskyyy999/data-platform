@@ -8,7 +8,8 @@ services:
     ports:
       - "5432:5432"
     networks:
-      - yanto-net
+      yanto-net:
+        ipv4_address: 192.168.12.7
   
   rest:
     image: apache/iceberg-rest-fixture
@@ -17,7 +18,8 @@ services:
       - 8181:8181
     env_file: ./.env
     networks:
-      - yanto-net
+      yanto-net:
+        ipv4_address: 192.168.12.8
 
   spark-master:
     image: spark:2.5.2
@@ -28,7 +30,8 @@ services:
     volumes:
       - ./data:/home/playground
     networks:
-      - yanto-net
+      yanto-net:
+        ipv4_address: 192.168.12.9
     ports:
       - 7077:7077
       - 8089:8080
@@ -42,7 +45,8 @@ services:
     environment:
       - MODE=worker
     networks:
-      - yanto-net
+      yanto-net:
+        ipv4_address: 192.168.12.10
     ports:
       - 8081:8081
     depends_on:
@@ -56,7 +60,8 @@ services:
       - MODE=worker
     env_file: ./.env
     networks:
-      - yanto-net
+      yanto-net:
+        ipv4_address: 192.168.12.11
     ports:
       - 8082:8081
     depends_on:
@@ -74,12 +79,15 @@ services:
     volumes:
       - ./data:/home/playground
     networks:
-      - yanto-net
+      yanto-net:
+        ipv4_address: 192.168.12.12
     depends_on:
       - master
-
 
 networks:
   yanto-net:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.12.0/24
     external: true
