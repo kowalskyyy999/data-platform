@@ -1,0 +1,23 @@
+version: '3.7'
+
+services:
+  zookeeper:
+    image: zookeeper
+    container_name: zookeeper
+    restart: always
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zookeeper:2888:3888;2181
+    depends_on:
+      - postgres
+  
+  kafka:
+    image: kafka:3.8.0
+    build:
+      context: .
+    container_name: kafka-server
+    restart: always
+    ports:
+      - 9092:9092
+    depends_on:
+      - zookeeper
