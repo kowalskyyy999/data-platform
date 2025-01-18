@@ -52,6 +52,8 @@ ENV SPARK_MASTER_PORT=7077
 ENV MODE=master
 ENV PYSPARK_DRIVER_PYTHON="jupyter"
 ENV PYSPARK_DRIVER_PYTHON_OPTS="notebook --ip=0.0.0.0 --no-browser --port=8989 --allow-root --NotebookApp.token=''"
+ENV PYSPARK_SUBMIT_ARGS=
+ENV PYSPARK_MASTER="spark://master:7077"
 
 ENV CATALOG_NAME=demo
 
@@ -116,6 +118,7 @@ RUN echo '#!/bin/sh' > /opt/spark/entrypoint.sh && \
   echo 'if [ $MODE = "master" ]; then ${SPARK_HOME}/bin/spark-class org.apache.spark.deploy.master.Master >> ${SPARK_HOME}/logs/spark-master.out' >> /opt/spark/entrypoint.sh && \
   echo 'elif [ $MODE = "worker" ]; then ${SPARK_HOME}/bin/spark-class org.apache.spark.deploy.worker.Worker spark://${SPARK_MASTER_HOST}:${SPARK_MASTER_PORT} >> ${SPARK_HOME}/logs/spark-worker.out' >> /opt/spark/entrypoint.sh && \
   echo 'elif [ $MODE = "notebook" ]; then ${SPARK_HOME}/bin/pyspark --master spark://${SPARK_MASTER_HOST}:${SPARK_MASTER_PORT}' >> /opt/spark/entrypoint.sh && \
+  echo 'elif [ $MODE = "submit" ]; then ${SPARK_HOME}/bin/spark-submit --master ${PYSPARK_MASTER} ${PYSPARK_SUBMIT_ARGS} apps/${NAME_FILE}' >> /opt/spark/entrypoint.sh && \
   echo 'else echo "Mode not set !!!"' >> /opt/spark/entrypoint.sh && \
   echo 'fi' >> /opt/spark/entrypoint.sh && \
   chmod a+x /opt/spark/entrypoint.sh
