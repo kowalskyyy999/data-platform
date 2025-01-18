@@ -1,0 +1,45 @@
+version: '3.7'
+
+services:
+  clickhouse-server:
+    image: clickhouse/clickhouse-server
+    container_name: clickhouse-server
+    ports:
+      - 9999:9000
+      - 8123:8123
+    environment:
+      CLICKHOUSE_USER: $CLICKHOUSE_USER
+      CLICKHOUSE_PASSWORD: $CLICKHOUSE_PASSWORD
+    networks:
+      yanto-net:
+        ipv4_address: 192.168.12.18
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1000M
+
+  clickhouse-client:
+    build: ./clickhouse-client
+    container_name: clickhouse-client
+    command: clickhouse-client --query "CREATE TABLE binance_usdt_tab ENGINE=IcebergS3('http://minio1:9000/warehouse/finnhub_db/binance_usdt_tab', 'minioadmin', 'minioadmin');"
+    environment:
+      CLICKHOUSE_USER: $CLICKHOUSE_USER
+      CLICKHOUSE_PASSWORD: $CLICKHOUSE_PASSWORD
+    networks:
+      - yanto-net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 500M
+    depends_on:
+      - clickhouse-server
+
+networks:
+  yanto-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.12.0/24
+    external: true
