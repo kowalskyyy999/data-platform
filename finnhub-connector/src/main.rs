@@ -19,9 +19,40 @@ struct CheckMessage {
     r#type: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct Block {
+    c: Option<f64>,
+    p: Option<f64>,
+    s: String,
+    t: i64,
+    v: Option<f64>,
+}
+
+impl std::fmt::Display for Block {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{{\"c\":{}, \"p\":{}, \"s\":\"{}\", \"t\":{}, \"v\":{}}}",
+            self.c.unwrap_or_default(),
+            self.p.unwrap_or_default(),
+            self.s,
+            self.t,
+            self.v.unwrap_or_default()
+        )
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct FinnhubData {
+    data: Vec<Block>,
+}
+
 #[tokio::main]
 async fn main() {
-    dotenv().ok();
+    if let Ok(_) = std::fs::File::open(".env") {
+        dotenv().ok();
+    }
+
     let (tx, mut rx) = tokio::sync::mpsc::channel(64);
 
     let args = Args::parse();
@@ -67,16 +98,21 @@ async fn main() {
 
     while let Some(message) = rx.recv().await {
         let type_message: CheckMessage = serde_json::from_str(&message).unwrap();
+        println!("sending to kafka ...");
         if type_message.r#type.eq("trade") {
-            producer
-                .send(
-                    FutureRecord::to(&topic)
-                        .key("some key")
-                        .payload(message.as_str()),
-                    std::time::Duration::from_secs(0),
-                )
-                .await
-                .unwrap();
+            let finnhub_data: FinnhubData = serde_json::from_str(&message).unwrap();
+            let blocks = finnhub_data.data;
+            for block in blocks {
+                producer
+                    .send(
+                        FutureRecord::to(&topic)
+                            .key("some key")
+                            .payload(&block.to_string()),
+                        std::time::Duration::from_secs(0),
+                    )
+                    .await
+                    .unwrap();
+            }
         } else if type_message.r#type.eq("ping") {
             println!("waiting data ...")
         } else {
