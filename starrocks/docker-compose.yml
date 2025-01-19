@@ -22,6 +22,11 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     volumes:
       - starrocks-fe:/opt/starrocks/fe
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1000M
     networks:
       yanto-net:
         ipv4_address: 192.168.12.13
@@ -41,6 +46,11 @@ services:
       - starrocks-be:/opt/starrocks/be
     ports:
       - 8040:8040
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1500M
     networks:
       yanto-net:
         ipv4_address: 192.168.12.14
@@ -53,6 +63,11 @@ services:
       args:
         - PRIORITY_NETWORKS=192.168.12.0/24
     command: ["/bin/sh", "-c", "/opt/starrocks/cn_server.sh"]
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1500M
     networks:
       yanto-net:
         ipv4_address: 192.168.12.15

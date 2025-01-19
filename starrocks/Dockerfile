@@ -25,6 +25,7 @@ ENV CATALOG_WAREHOUSE="s3://warehouse"
 ENV S3_ENDPOINT="http://minio:9000"
 ENV AWS_ACCESS_KEY_ID="root"
 ENV AWS_SECRET_ACCESS_KEY="root"
+# ENV AWS_REGION=us-east-1
 
 WORKDIR /opt
 

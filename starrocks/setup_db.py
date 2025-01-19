@@ -22,7 +22,8 @@ PROPERTIES
     "aws.s3.enable_path_style_access" = "true",
     "aws.s3.endpoint" = "{os.getenv("S3_ENDPOINT")}",
     "aws.s3.access_key" = "{os.getenv("AWS_ACCESS_KEY_ID")}",
-    "aws.s3.secret_key" = "{os.getenv("AWS_SECRET_ACCESS_KEY")}"
+    "aws.s3.secret_key" = "{os.getenv("AWS_SECRET_ACCESS_KEY")}",
+    "client.factory"="com.starrocks.connector.iceberg.IcebergAwsClientFactory"
 );
     """
 
