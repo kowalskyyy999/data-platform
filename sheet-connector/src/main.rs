@@ -37,25 +37,7 @@ async fn create_table(
         queries.push(q);
     }
 
-    // for i in 0..headers.len() {
-    //     let query = match first.get(i) {
-    //         Some(a) => match a.parse::<i32>() {
-    //             Ok(x) => format!("{} INTEGER", headers.get(i).unwrap()),
-    //             Err(_) => match a.parse::<f32>() {
-    //                 Ok(c) => format!("{} FLOAT", headers.get(i).unwrap()),
-    //                 Err(_) => format!("{} VARCHAR(255)", headers.get(i).unwrap()),
-    //             },
-    //         },
-    //         None => format!(""),
-    //     };
-    //
-    //     queries.push(query);
-    // }
-
     let query_builder = format!("CREATE TABLE {table_name} ({})", queries.join(","));
-    // if let Ok(_) = sqlx::query(&query_builder).execute(pool).await {
-    //     println!("Table has created")
-    // }
 
     match sqlx::query(&query_builder).execute(pool).await {
         Ok(_) => {
@@ -112,7 +94,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let cli = Cli::parse();
 
-    let creds = PathBuf::from("credentials.json");
+    let creds = match std::fs::File::open("/opt/credentials.json") {
+        Ok(_) => PathBuf::from("/opt/credentials.json"),
+        Err(_) => match std::fs::File::open("credentials.json") {
+            Ok(_) => PathBuf::from("credentials.json"),
+            Err(_) => PathBuf::default(),
+        },
+    };
+
+    // let creds = PathBuf::from("credentials.json");
     let service_account = CustomServiceAccount::from_file(creds).unwrap();
     let scopes = &["https://www.googleapis.com/auth/spreadsheets"];
     let token = service_account.token(scopes).await.unwrap();
