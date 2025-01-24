@@ -8,4 +8,4 @@ WORKDIR /opt/spark
 
 RUN mkdir apps
 
-COPY apps/* apps/
+COPY scripts/* apps/
