@@ -1,0 +1,30 @@
+version: '3.1'
+
+networks:
+  yanto-net:
+    driver: bridge
+    external: true
+
+services:
+  finnhub-connector:
+    image: finnhub-connector
+    build: .
+    container_name: finnhub-connector-binance
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 500M
+    command: finnhub-connector --topic binance_usdt_topic --symbol BINANCE:BTCUSDT 
+    networks:
+      - yanto-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 500M
+    environment:
+      TOKEN: ${TOKEN}
+      KAFKA_BROKER: "kafka-server:9092"
+    depends_on:
+      - kafka-server
