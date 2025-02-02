@@ -1,5 +1,0 @@
-target
-Cargo.lock
-credentials.json
-*.csv
-.env
