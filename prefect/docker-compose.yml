@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  postgres-prefect:
+    image: postgres-prefect:15
+    build:
+      context: .
+      dockerfile: postgres.Dockerfile
+    container_name: postgres-prefect
+    environment:
+      POSTGRES_USER: prefect
+      POSTGRES_PASSWORD: prefect
+      POSTGRES_DB: prefect_db
+    networks:
+      - yanto-net
+
+  prefect:
+    image: prefect:latest
+    build: .
+    container_name: prefect
+    environment:
+      PREFECT_ORION_API_HOST: "0.0.0.0"
+      PREFECT_API_URL: "http://0.0.0.0:4200/api"
+      PREFECT_ORION_DATABASE_CONNECTION_URL: "postgresql+asyncpg://prefect:prefect@postgres-prefect:5432/prefect_db"
+      PREFECT_API_DATABASE_CONNECTION_URL: "postgresql+asyncpg://prefect:prefect@postgres-prefect:5432/prefect_db"
+    ports:
+      - 4200:4200
+    networks:
+      - yanto-net
+    depends_on:
+      - postgres-prefect
+
+networks:
+  yanto-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.12.0/24
+    external: true
+
