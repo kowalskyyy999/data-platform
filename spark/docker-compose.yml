@@ -1,0 +1,123 @@
+version: '3.7'
+
+services:
+  postgres-spark:
+    image: postgres:15.3
+    container_name: postgres-spark
+    env_file: ./.env 
+    ports:
+      - "5432:5432"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1000M
+    networks:
+      yanto-net:
+        ipv4_address: 192.168.12.7
+  
+  rest:
+    image: apache/iceberg-rest-fixture
+    container_name: iceberg-rest
+    ports:
+      - 8181:8181
+    env_file: ./.env
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1000M
+    networks:
+      yanto-net:
+        ipv4_address: 192.168.12.8
+
+  spark-master:
+    image: spark:3.5.2
+    build: .
+    container_name: spark-master
+    hostname: master
+    env_file: ./.env
+    volumes:
+      - ./data:/home/playground
+    networks:
+      yanto-net:
+        ipv4_address: 192.168.12.9
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1000M
+    ports:
+      - 7077:7077
+      - 8089:8080
+      - 4040:4040
+
+  spark-worker1:
+    image: spark:3.5.2
+    build: .
+    container_name: spark-worker1
+    env_file: ./.env
+    environment:
+      - MODE=worker
+    networks:
+      yanto-net:
+        ipv4_address: 192.168.12.10
+    deploy:
+      resources:
+        limits:
+          cpus: '0'
+          memory: 1000M
+    ports:
+      - 8081:8081
+    depends_on:
+      - master
+
+  spark-worker2:
+    image: spark:3.5.2
+    build: .
+    container_name: spark-worker2
+    environment:
+      - MODE=worker
+    env_file: ./.env
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1000M
+    networks:
+      yanto-net:
+        ipv4_address: 192.168.12.11
+    ports:
+      - 8082:8081
+    depends_on:
+      - master
+
+  spark-notebook:
+    image: spark:3.5.2
+    build: .
+    container_name: spark-notebook
+    environment:
+      - MODE=notebook
+    env_file: ./.env
+    ports:
+      - 8989:8989
+    volumes:
+      - ./data:/home/playground
+    networks:
+      yanto-net:
+        ipv4_address: 192.168.12.12
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 500M
+    depends_on:
+      - master
+
+networks:
+  yanto-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.12.0/24
+    external: true
