@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  spark-job:
+    build: .
+    container_name: spark-job
+    environment:
+      MODE: "submit"
+      AWS_REGION: $AWS_REGION
+      AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+      PYSPARK_SUBMIT_ARGS: "--packages org.apache.spark:spark-streaming-kafka-0-10_2.12:3.2.0,org.apache.spark:spark-sql-kafka-0-10_2.12:3.2.0"
+      NAME_FILE: "kafka-connector.py"
+      PYSPARK_MASTER: "local"
+    networks:
+      - yanto-net
+    depends_on:
+      - master
+
+networks:
+  yanto-net:
+    driver: bridge
+    external: true
