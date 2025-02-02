@@ -1,0 +1,141 @@
+version: '3.7'
+
+services:
+  minio1:
+    image: minio-iceberg:latest
+    build: .
+    container_name: minio1
+    volumes:
+      - ./data1:/data1
+      - ./data2:/data2
+    ports:
+      - "9001:9000" ## For API Minio1
+      - "9081:9001" ## For Web Console Minio1
+    environment:
+      MINIO_ROOT_USER: "minioadmin"
+      MINIO_ROOT_PASSWORD: "minioadmin"
+      MINIO_REGION_NAME: "us-east-1"
+      MINIO_REGION: "us-east-1"
+      MINIO_DOMAIN: "minio"
+    command: server http://minio{1...4}/data{1...2} --console-address ":9001"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1000M
+    networks:
+      yanto-net:
+        aliases:
+          - warehouse.minio
+        ipv4_address: 192.168.12.2
+
+  minio2:
+    image: minio-iceberg:latest
+    build: .
+    container_name: minio2
+    volumes:
+      - ./data3:/data1
+      - ./data4:/data2
+    ports:
+      - "9002:9000" ## For API Minio2
+      - "9082:9002" ## For Web Console Minio2
+    environment:
+      MINIO_ROOT_USER: "minioadmin"
+      MINIO_ROOT_PASSWORD: "minioadmin"
+      MINIO_REGION_NAME: "us-east-1"
+      MINIO_REGION: "us-east-1"
+      MINIO_DOMAIN: "minio"
+    command: server http://minio{1...4}/data{1...2} --console-address ":9002"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1000M
+    networks:
+      yanto-net:
+        aliases:
+          - warehouse.minio1
+        ipv4_address: 192.168.12.3
+
+  minio3:
+    image: minio-iceberg:latest
+    build: .
+    container_name: minio3
+    volumes:
+      - ./data5:/data1
+      - ./data6:/data2
+    ports:
+      - "9003:9000"
+    environment:
+      MINIO_ROOT_USER: "minioadmin"
+      MINIO_ROOT_PASSWORD: "minioadmin"
+      MINIO_REGION_NAME: "us-east-1"
+      MINIO_REGION: "us-east-1"
+    command: server http://minio{1...4}/data{1...2} --console-address ":9003"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1000M
+    networks:
+      yanto-net:
+        ipv4_address: 192.168.12.4
+
+  minio4:
+    image: minio-iceberg:latest
+    build: .
+    container_name: minio4
+    volumes:
+      - ./data7:/data1
+      - ./data8:/data2
+    ports:
+      - "9004:9000"
+    environment:
+      MINIO_ROOT_USER: "minioadmin"
+      MINIO_ROOT_PASSWORD: "minioadmin"
+      MINIO_REGION_NAME: "us-east-1"
+      MINIO_REGION: "us-east-1"
+    command: server http://minio{1...4}/data{1...2} --console-address ":9004"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1000M
+    networks:
+      yanto-net:
+        ipv4_address: 192.168.12.5
+
+  mc:
+    depends_on:
+      - minio1
+      - minio2
+    image: minio/mc
+    container_name: mc
+    networks:
+      yanto-net:
+        ipv4_address: 192.168.12.6
+    environment:
+      - AWS_ACCESS_KEY_ID=minioadmin
+      - AWS_SECRET_ACCESS_KEY=minioadmin
+      - AWS_REGION=us-east-1
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 500M
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc config host add minio1 http://minio2:9000 minioadmin minioadmin) do echo '...waiting...' && sleep 1; done;
+      /usr/bin/mc rm -r --force minio1/warehouse;
+      /usr/bin/mc mb minio1/warehouse;
+      /usr/bin/mc anonymous set public minio1/warehouse;
+      tail -f /dev/null
+      "
+
+networks:
+  yanto-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.12.0/24
+    external: true 
