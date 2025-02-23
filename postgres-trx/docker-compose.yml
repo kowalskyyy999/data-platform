@@ -1,9 +1,10 @@
-version: '3.7'
+version: '2.7'
 
 services:
-  postgres-trx:
-    image: postgres:15.3
-    container_name: postgres-trx
+  postgres:
+    image: postgres-dbz:15.3
+    build: .
+    container_name: postgres
     env_file: ./.env 
     ports:
       - "5433:5432"
