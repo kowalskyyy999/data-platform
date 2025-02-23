@@ -1,0 +1,14 @@
+{
+  "name": "example-connector",  
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector", 
+    "database.hostname": "postgres", 
+    "database.port": "5432", 
+    "database.user": "pg_user", 
+    "database.password": "pg_pass", 
+    "database.dbname" : "pg_metadata", 
+    "topic.prefix": "example-connector-pg", 
+    "table.include.list": "public.tables" 
+
+  }
+}
