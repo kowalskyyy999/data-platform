@@ -1,0 +1,29 @@
+version: '3.7'
+
+services:
+  kafka-connect:
+    image: kafka-connect:3.8.0
+    build: .
+    container_name: kafka-connect
+    ports:
+      - 8084:8084
+    links:
+      - kafka-server
+      - zookeeper
+    depends_on: 
+      - kafka
+    networks:
+      yanto-net:
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '1'
+    #       memory: 1000M
+
+networks:
+  yanto-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.12.0/24
+    external: true
