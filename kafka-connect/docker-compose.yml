@@ -14,11 +14,11 @@ services:
       - kafka
     networks:
       yanto-net:
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: '1'
-    #       memory: 1000M
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1000M
 
 networks:
   yanto-net:
